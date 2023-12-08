@@ -65,7 +65,7 @@ defmodule AdventOfCode2023.Day2 do
   end
 
   @doc """
-  Day 1 
+  Day 2 
   ## Examples
 
       iex> AdventOfCode2023.day2("route/to/example.txt")
