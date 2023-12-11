@@ -10,12 +10,110 @@ defmodule AdventOfCode2023.Day3 do
       8
   """
   def day3_p1(input) do
-    File.read!(input)
+    input
+    |> File.read!()
     |> String.split("\n", trim: true)
     |> Enum.map(&String.to_charlist(&1))
     |> get_adj_nums()
     |> List.flatten()
     |> Enum.sum()
+  end
+
+  def day3_p2(input) do
+    input
+    |> File.read!()
+    |> String.split("\n", trim: true)
+    |> Enum.map(fn e ->
+      {
+        e,
+        Regex.scan(~r/\*+/, e, return: :index)
+        |> List.flatten()
+        |> Enum.map(&elem(&1, 0))
+      }
+    end)
+    |> find_numbers()
+    |> Enum.map(fn l ->
+      Enum.filter(
+        l,
+        fn a ->
+          List.flatten(a) |> Enum.filter(fn a -> a != 1 end) |> Enum.count() == 2
+        end
+      )
+    end)
+
+    # |> Enum.map(&(List.flatten(&1) |> Enum.product()))
+    # |> Enum.filter(fn e -> e != 1 end)
+    # |> Enum.sum()
+  end
+
+  defp find_numbers(l) do
+    find_numbers(l, true)
+  end
+
+  defp find_numbers(_l = [curLine, nextLine | t], first) when first == true do
+    [get_nums({"", []}, curLine, nextLine) | find_numbers([curLine, nextLine | t], false)]
+  end
+
+  defp find_numbers(_l = [prevLine, curLine, nextLine | t], first) when first == false do
+    [get_nums(prevLine, curLine, nextLine) | find_numbers([curLine, nextLine | t], false)]
+  end
+
+  defp find_numbers(_l = [prevLine, curLine | []], _) do
+    [get_nums(prevLine, curLine) | []]
+  end
+
+  defp get_nums(
+         prevLine = {prevString, _previndexlist},
+         _currLine = {currString, currLocations},
+         nextLine = {nextString, _nextindexlist}
+       ) do
+    case currLocations do
+      [i | t] ->
+        [
+          [num(prevString, i), num(currString, i), num(nextString, i)]
+          | get_nums(prevLine, {currString, t}, nextLine)
+        ]
+
+      [] ->
+        []
+    end
+  end
+
+  defp get_nums(prevLine = {prevString, _previndexlist}, _currLine = {currString, currLocations}) do
+    case currLocations do
+      [i | t] ->
+        [{num(prevString, i), num(currString, i)} | get_nums(prevLine, {currString, t})]
+
+      [] ->
+        []
+    end
+  end
+
+  defp num(string, index) do
+    if [] == (l = get_list(string, index)) do
+      1
+    else
+      l
+    end
+  end
+
+  defp get_list(string, location) do
+    Regex.scan(~r/\d+/, string, return: :index)
+    |> Enum.map(fn [{ind, len}] ->
+      if ind <= location do
+        if ind + len >= location do
+          string |> String.slice(ind..(ind + len - 1)) |> String.to_integer()
+        else
+          1
+        end
+      else
+        if ind == location + 1 do
+          string |> String.slice(ind..(ind + len - 1)) |> String.to_integer()
+        else
+          1
+        end
+      end
+    end)
   end
 
   # gets all numbers adjacent to chars
